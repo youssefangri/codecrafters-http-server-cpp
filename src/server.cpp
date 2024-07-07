@@ -54,9 +54,9 @@ int main(int argc, char **argv) {
   std::cout << "Waiting for a client to connect...\n";
   
   std::string response;
-  std::string data;
+  std::string data(1024, '\0');
   int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  size_t bytes_received = recv(client_fd, &data, sizeof(data), 0);
+  ssize_t bytes_received = recv(client_fd, &data[0], sizeof(data), 0);
   if (bytes_received>0) {
       std::cout << "data: " << data << std::endl;
       if (data.starts_with("GET / HTTP/1.1")){
