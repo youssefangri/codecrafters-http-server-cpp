@@ -53,8 +53,19 @@ int main(int argc, char **argv) {
   
   std::cout << "Waiting for a client to connect...\n";
   
-  std::string response = "HTTP/1.1 200 OK\r\n\r\n";
+  std::string response;
+  std::string data;
   int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
+  size_t bytes_received = recv(client_fd, &data, sizeof(data), 0);
+  if (bytes_received>0) {
+      std::cout << "data: " << data << std::endl;
+      if (data.starts_with("GET / HTTP/1.1")){
+        response = "HTTP/1.1 200 OK\r\n\r\n";
+      }
+      else {
+        response = "HTTP/1.1 404 Not Found\r\n\r\n";
+      }
+  }
   std::cout << "Client connected\n";
   send(client_fd, response.c_str(), response.length(),0);
   
