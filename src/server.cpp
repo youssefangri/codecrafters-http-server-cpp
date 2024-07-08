@@ -57,20 +57,22 @@ int main(int argc, char **argv) {
   std::string data(1024, '\0');
   std::string content;
   int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  ssize_t bytes_received = recv(client_fd, &data[0], sizeof(data), 0);
+  ssize_t bytes_received = recv(client_fd, &data[0], data.length(), 0);
   if (bytes_received>0) {
       std::cout << "data: " << data << std::endl;
       if (data.starts_with("GET / HTTP/1.1")){
         response = "HTTP/1.1 200 OK\r\n\r\n";
-      } else if (data.starts_with("GET /echo/"))
-      {
+      } else if (data.starts_with("GET /echo/")){
         content = data;
         content.erase(0,10);
         content.erase(content.find(" "), content.length());
         response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
-      }
-      
-      else {
+      } else if (data.starts_with("GET /user-agent")){
+        content = data;
+        content.erase(0,content.find("User-Agent:")+12);
+        content.erase(content.find("\r\n"), content.length());
+        response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
+      } else {
         response = "HTTP/1.1 404 Not Found\r\n\r\n";
       }
   }
