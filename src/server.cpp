@@ -8,10 +8,12 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <thread>
+#include <fstream>
+#include <sstream>
 
-void handle_http(int client_fd, struct sockaddr_in client_addr){
+void handle_http(int client_fd, struct sockaddr_in client_addr, std::string dir){
   std::string response;
-  std::string data(1024, '\0');
+  std::string data(2024, '\0');
   std::string content;
   
   ssize_t bytes_received = recv(client_fd, &data[0], data.length(), 0);
@@ -29,6 +31,20 @@ void handle_http(int client_fd, struct sockaddr_in client_addr){
         content.erase(0,content.find("User-Agent:")+12);
         content.erase(content.find("\r\n"), content.length());
         response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
+      } else if (data.starts_with("GET /files/")){
+        std::ifstream file;
+        content = data;
+        content.erase(0,11);
+        content.erase(content.find(" "), content.length());
+        file.open(dir+content);
+        if (file.good()){
+          std::stringstream file_content;
+          file_content << file.rdbuf();
+          response = "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + std::to_string(file_content.str().length()) + "\r\n\r\n" + file_content.str();
+        } else {
+          response = "HTTP/1.1 404 Not Found\r\n\r\n";
+        }
+        
       } else {
         response = "HTTP/1.1 404 Not Found\r\n\r\n";
       }
@@ -40,6 +56,12 @@ int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
+  std::string dir;
+
+  if (argc == 3 && strcmp(argv[1], "--directory") == 0)
+  {
+  	dir = argv[2];
+  }
   
   // You can use print statements as follows for debugging, they'll be visible when running tests.
   std::cout << "Logs from your program will appear here!\n";
@@ -84,8 +106,8 @@ int main(int argc, char **argv) {
   {
     int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);  
     std::cout << "Client connected\n";
-    // handle_http(client_fd,client_addr);
-    std::thread th(handle_http, client_fd, client_addr);
+    // handle_http(client_fd,client_addr, dir);
+    std::thread th(handle_http, client_fd, client_addr, dir);
     th.detach();
   }
   
