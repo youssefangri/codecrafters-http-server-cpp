@@ -50,5 +50,6 @@
         "optional": "cpp",
         "unordered_map": "cpp",
         "vector": "cpp"
-    }
+    },
+    "editor.formatOnSave": true,
 }

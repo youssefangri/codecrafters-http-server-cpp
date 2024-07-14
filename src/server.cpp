@@ -15,6 +15,7 @@ void handle_http(int client_fd, struct sockaddr_in client_addr, std::string dir)
 {
   std::string response;
   std::string data(2024, '\0');
+  std::string file_name;
   std::string content;
 
   ssize_t bytes_received = recv(client_fd, &data[0], data.length(), 0);
@@ -51,10 +52,28 @@ void handle_http(int client_fd, struct sockaddr_in client_addr, std::string dir)
         std::stringstream file_content;
         file_content << file.rdbuf();
         response = "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " + std::to_string(file_content.str().length()) + "\r\n\r\n" + file_content.str();
+        file.close();
       }
       else
       {
         response = "HTTP/1.1 404 Not Found\r\n\r\n";
+      }
+    }
+    else if (data.starts_with("POST /files/"))
+    {
+      std::ofstream outfile;
+      std::string req_content;
+      file_name = data;
+      file_name.erase(0, 11);
+      file_name.erase(file_name.find(" "), file_name.length());
+      req_content = data;
+      req_content.erase(0, req_content.find("\r\n\r\n") + 4);
+      outfile.open(dir + file_name);
+      if (outfile.good())
+      {
+        outfile << req_content.c_str();
+        response = "HTTP/1.1 201 Created\r\n\r\n";
+        outfile.close();
       }
     }
     else
