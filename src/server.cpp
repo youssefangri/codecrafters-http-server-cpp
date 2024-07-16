@@ -11,12 +11,20 @@
 #include <fstream>
 #include <sstream>
 
+std::string get_accept_encoding(std::string req)
+{
+  req.erase(0, req.find("Accept-Encoding: ") + 17);
+  req.erase(req.find("\r\n"), req.length());
+  return req;
+}
+
 void handle_http(int client_fd, struct sockaddr_in client_addr, std::string dir)
 {
   std::string response;
   std::string data(2024, '\0');
   std::string file_name;
   std::string content;
+  std::string comprission_schema;
 
   ssize_t bytes_received = recv(client_fd, &data[0], data.length(), 0);
   if (bytes_received > 0)
@@ -31,7 +39,14 @@ void handle_http(int client_fd, struct sockaddr_in client_addr, std::string dir)
       content = data;
       content.erase(0, 10);
       content.erase(content.find(" "), content.length());
-      response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
+      if (get_accept_encoding(data) == "gzip")
+      {
+        response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
+      }
+      else
+      {
+        response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
+      }
     }
     else if (data.starts_with("GET /user-agent"))
     {
