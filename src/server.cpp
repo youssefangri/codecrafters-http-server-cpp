@@ -39,7 +39,7 @@ void handle_http(int client_fd, struct sockaddr_in client_addr, std::string dir)
       content = data;
       content.erase(0, 10);
       content.erase(content.find(" "), content.length());
-      if (get_accept_encoding(data) == "gzip")
+      if (get_accept_encoding(data).contains("gzip"))
       {
         response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: " + std::to_string(content.length()) + "\r\n\r\n" + content;
       }
